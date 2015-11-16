@@ -29,7 +29,7 @@ def readplasmaline(fn,beamid,tlim):
 
 
     for F,s in zip(fiter,dshift):
-        filename = fn.parent / (fn.name.split('.')[0] + '.' + F[0] + '.h5')
+        filename = fn.parent / ('.'.join((fn.stem.split('.')[0], F[0], 'h5')))
         with h5py.File(str(filename),'r',libver='latest') as f:
             T     = ut2dt(f['/Time/UnixTime'].value)
             bind  = findstride(f['/PLFFTS/Data/Beamcodes'], beamid) #NOTE: what if beam pattern changes during file?
@@ -78,15 +78,20 @@ def plotplasmaline(spec,Freq,fn, tlim=(None,None),vlim=(None,None),zlim=(None,No
 
 
         writeplots(fg,t,odir,makeplot,s.split(' ')[0])
-        show() #optinal: so as to allow viewing each plot without opening 50 windows at once.
+        show() #optional: so as to allow viewing each plot without opening 50 windows at once.
 
 def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot,odir):
     assert isinstance(spec,DataFrame)
+
     if not fg and not ax:
         fg = figure()
         ax = fg.gca()
+        isown = False
     elif fg and not ax:
         ax = fg.gca()
+        isown = False
+    else:
+        isown = True
 
     srng = spec.index.values
     zgood = srng>60 # above N km
@@ -94,9 +99,9 @@ def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot,odir):
     h=ax.pcolormesh(freq/1e6,srng[zgood],10*log10(spec.values[zgood,:]),
                     vmin=vlim[0],vmax=vlim[1],cmap='jet')#'cubehelix_r')
 
-    if ctxt.startswith('down'):
+    if isown or ctxt.startswith('down'):
         ax.set_ylabel('slant range [km]')
-    else:
+    elif isown or ctxt.startswith('up'):
         c=fg.colorbar(h,ax=ax)
         c.set_label('Power [dB]')
 

@@ -4,63 +4,72 @@ summed measurements and plots
 from __future__ import division,absolute_import
 from datetime import datetime
 from pandas import Panel4D,DataFrame,Series
-from numpy import absolute,nan,linspace,percentile
-from matplotlib.pyplot import figure,draw,pause,subplots,show
+from numpy import absolute,nan,linspace,percentile,atleast_2d
+from matplotlib.pyplot import figure,subplots,draw,pause
 from matplotlib.cm import jet
 from matplotlib.colors import LogNorm
 #import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
-from .common import timeticks,findindex2Dsphere,timesync
+from .common import timeticks,findindex2Dsphere,timesync,projectisrhist
 from .snrpower import readpower_samples
-from GeoData.plotting import plotazelscale
+#from GeoData.plotting import plotazelscale
 
 vidnorm = None #LogNorm()
 
 #%% joint isr optical plot
-def dojointplot(ds,beamazel,optical,coordnames,optazel,optlla,optisrazel,utopt,utlim,makeplot):
+def dojointplot(ds,spec,freq,beamazel,optical, optazel,optlla,isrlla,heightkm,utopt,utlim,makeplot):
     """
     f1,a1: radar   figure,axes
     f2,a2: optical figure,axes
     """
     assert isinstance(ds,(Series,DataFrame))
-
 #%% setup master figure
-    fig,axs = subplots(2,1,figsize=(8,12))
+    fig,axs = subplots(2,2,figsize=(8,12))
+    axs = atleast_2d(axs)
 #%% setup radar plot(s)
-    a1 = axs[1]
+    a1 = axs[1,1]
     plotsumlongpulse(ds,a1)
     T = ds.index
     h1 = a1.axvline(nan,color='k',linestyle='--')
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
-#%% setup top optical plot
-    a0 = axs[0]
-    clim = compclim(optical,lower=10,upper=99.9)
-    h0 = a0.imshow(optical[0,...],origin='lower',interpolation='none',cmap='gray',
-                   norm=vidnorm,vmin=clim[0],vmax=clim[1])
-    a0.set_axis_off()
-    t0 = a0.set_title('')
+#%% setup optical plot
+    hi=[]; ht=[]; Iisr=[]; Iopt=[]
+    for a,o,e,l in zip(axs[0,:],optical,optazel,optlla):
+        optisrazel = projectisrhist(isrlla,beamazel,l,e,heightkm)
 
-#%% plot magnetic zenith beam
-    azimg = optazel[:,1].reshape(optical.shape[1:])
-    elimg = optazel[:,2].reshape(optical.shape[1:])
+        clim = compclim(o,lower=10,upper=99.9)
+        hi.append( a.imshow(o[0,...],origin='lower',interpolation='none',cmap='gray',
+                       norm=vidnorm,vmin=clim[0],vmax=clim[1]) )
+        a.set_axis_off()
+        ht.append(a.set_title(''))
 
-    br,bc = findindex2Dsphere(azimg,elimg,optisrazel['az'],optisrazel['el'])
+        azimg = e[:,1].reshape(o.shape[1:])
+        elimg = e[:,2].reshape(o.shape[1:])
+        #    plotazelscale(optical[0,...],azimg,elimg)
 
-    #hollow beam circle
-#    a2.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
+        #plot magnetic zenith beam
+        br,bc = findindex2Dsphere(azimg,elimg,optisrazel['az'],optisrazel['el'])
+        a.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
 
+        a.autoscale(True,tight=True)
+
+
+#%% setup plasma line plots
+#    a2 = axs[1,0]; a3 = axs[1,1]
+#    for a,c in zip((a2,a3),('down','up')):
+#        plotplasmatime(spec,freq,t,fn,fig,a,tlim,vlim,c,makeplot,odir)
+
+#%%
     #beam data, filled circle
-    s0 = a0.scatter(bc,br,s=500,alpha=0.5,linewidths=1.5,
-                    edgecolors=jet(linspace(ds.min(),ds.max())))
-
-    a0.autoscale(True,tight=True)
+#    s0 = a0.scatter(bc,br,s=500,alpha=0.5,linewidths=1.5,
+#                    edgecolors=jet(linspace(ds.min(),ds.max())))
 
 #%% time sync
-    Iisr,Iopt = timesync(T,utopt,utlim)
+        Is,Io = timesync(T,utopt,utlim)
+        Iisr.append(Is); Iopt.append(Io)
 #%% iterate
-    first = True
-    for iisr,iopt in zip(Iisr,Iopt):
+    for iisr,iopt0,iopt1 in zip(Iisr,Iopt[0],Iopt[1]):
 #%% update isr plot
         t0isr=T[iisr]
         h1.set_xdata(t0isr)
@@ -71,12 +80,7 @@ def dojointplot(ds,beamazel,optical,coordnames,optazel,optlla,optisrazel,utopt,u
         t0.set_text('optical: {}'.format(datetime.utcfromtimestamp(utopt[iopt])))
 #%% anim
         if 'show' in makeplot:
-            if first:
-                plotazelscale(optical[iopt,...],azimg,elimg)
-                show()
-                first=False
-            draw(); pause(0.01)
-
+            draw,pause(0.01)
         if 'png' in makeplot:
             fig.savefig('/tmp/joint_t{:05d}'.format(iopt),bbox_inches='tight',dpi=100)
 #

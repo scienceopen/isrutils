@@ -112,7 +112,7 @@ def findstride(beammat,bid):
 
 def ftype(fn):
     assert isinstance(fn,Path)
-    return fn.name.split('.')[1]
+    return fn.stem.split('.')[1]
 
 def _expfn(fn):
     """
@@ -143,9 +143,9 @@ def sampletime(T,Np):
     return dtime
 
 def writeplots(fg,t,odir,makeplot,ctxt=''):
-    assert isinstance(odir,Path)
 
     if 'png' in makeplot:
+        assert isinstance(odir,Path), 'must specify path when makeplot=png to make plots'
         ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H:%M:%S')+'.png')
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
@@ -165,16 +165,16 @@ def timeticks(tdiff):
 def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p = ArgumentParser(description=descr)
     p.add_argument('isrfn',help='HDF5 file to read')
-    p.add_argument('-c','--optfn',help='optical data HDF5 to read',default='')
-    p.add_argument('-a','--azelfn',help='plate scale file hdf5',default='')
+    p.add_argument('-c','--optfn',help='optical data HDF5 to read',nargs='+',default=('',))
+    p.add_argument('-a','--azelfn',help='plate scale file hdf5',nargs='+',default=('',))
     p.add_argument('--t0',help='time to extract 1-D vertical plot')
     p.add_argument('--acf',help='show autocorrelation function (ACF)',action='store_true')
     p.add_argument('--samples',help='use raw samples (lowest level data commnoly available)',action='store_true')
     p.add_argument('--beamid',help='beam id 64157 is magnetic zenith beam',type=int,default=64157)
-    p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2)
+    p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2,default=(None,None))
     p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90.,None))
-    p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2)
-    p.add_argument('--flim',help='frequency limits to plots',type=float,nargs=2)
+    p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2,default=(None,None))
+    p.add_argument('--flim',help='frequency limits to plots',type=float,nargs=2,default=(None,None))
     p.add_argument('-m','--makeplot',help='png to write pngs',nargs='+',default=['show'])
     p.add_argument('-o','--odir',help='directory to write files to',default='')
     p = p.parse_args()
