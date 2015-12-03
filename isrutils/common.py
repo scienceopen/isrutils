@@ -145,7 +145,7 @@ def sampletime(T,Np):
 def writeplots(fg,t,odir,makeplot,ctxt=''):
 
     if 'png' in makeplot:
-        assert isinstance(odir,Path), 'must specify path when makeplot=png to make plots'
+        odir = Path(odir).expanduser()
         ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H:%M:%S')+'.png')
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
@@ -173,7 +173,7 @@ def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p.add_argument('--beamid',help='beam id 64157 is magnetic zenith beam',type=int,default=64157)
     p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2,default=(None,None))
     p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90.,None))
-    p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2,default=(None,None))
+    p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2)
     p.add_argument('--flim',help='frequency limits to plots',type=float,nargs=2,default=(None,None))
     p.add_argument('-m','--makeplot',help='png to write pngs',nargs='+',default=['show'])
     p.add_argument('-o','--odir',help='directory to write files to',default='')

@@ -4,7 +4,7 @@ from pathlib2 import Path
 from numpy import log10,nonzero,meshgrid
 import h5py
 from pandas import Panel4D,DataFrame
-from matplotlib.pyplot import figure,subplots,show
+from matplotlib.pyplot import figure,subplots,show,close
 #
 from .common import findstride,ut2dt,_expfn,writeplots
 
@@ -55,7 +55,7 @@ def readplasmaline(fn,beamid,tlim):
     return spec,Freq
 
 
-def plotplasmaline(spec,Freq,fn, tlim=(None,None),vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
+def plotplasmaline(spec,Freq,fn, tlim=None,vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
 
     ptype=None#'mesh'
 
@@ -74,13 +74,16 @@ def plotplasmaline(spec,Freq,fn, tlim=(None,None),vlim=(None,None),zlim=(None,No
                 plotplasmamesh(spec.loc[s,t,:,:],Freq[F].values,fg,ax,vlim,zlim,ptype)
             else: #pcolor
                 plotplasmatime(spec.loc[s,t,:,:],Freq[F].values,t.to_pydatetime(),fn,
-                               fg,ax,tlim,vlim,s,makeplot,odir)
+                               fg,ax,tlim,vlim,s,makeplot)
 
 
         writeplots(fg,t,odir,makeplot,s.split(' ')[0])
-        show() #optional: so as to allow viewing each plot without opening 50 windows at once.
+        if 'show' in makeplot:
+            show()
+        else:
+            close(fg)
 
-def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot,odir):
+def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot):
     assert isinstance(spec,DataFrame)
 
     if not fg and not ax:
