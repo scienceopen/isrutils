@@ -102,11 +102,11 @@ def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot):
     h=ax.pcolormesh(freq/1e6,srng[zgood],10*log10(spec.values[zgood,:]),
                     vmin=vlim[0],vmax=vlim[1],cmap='jet')#'cubehelix_r')
 
-    if isown or ctxt.startswith('down'):
+    if not isown or ctxt.startswith('down'):
         ax.set_ylabel('slant range [km]')
-    elif isown or ctxt.startswith('up'):
-        c=fg.colorbar(h,ax=ax)
-        c.set_label('Power [dB]')
+
+    c=fg.colorbar(h,ax=ax)
+    c.set_label('Power [dB]')
 
     ax.set_xlabel('Doppler frequency [MHz]')
     ax.set_title('{} {}'.format(_expfn(fn),t))

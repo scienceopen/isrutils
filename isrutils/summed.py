@@ -6,8 +6,8 @@ from datetime import datetime
 from pandas import Panel4D,DataFrame,Series
 from numpy import absolute,nan,linspace,percentile,atleast_2d
 from matplotlib.pyplot import figure,subplots,draw,pause
-from matplotlib.cm import jet
-from matplotlib.colors import LogNorm
+#from matplotlib.cm import jet
+#from matplotlib.colors import LogNorm
 #import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
@@ -18,7 +18,8 @@ from .snrpower import readpower_samples
 vidnorm = None #LogNorm()
 
 #%% joint isr optical plot
-def dojointplot(ds,spec,freq,beamazel,optical, optazel,optlla,isrlla,heightkm,utopt,utlim,makeplot):
+def dojointplot(ds,spec,freq,beamazel,optical, optazel,optlla,isrlla,heightkm,
+                optut,utlim,makeplot):
     """
     f1,a1: radar   figure,axes
     f2,a2: optical figure,axes
@@ -35,7 +36,7 @@ def dojointplot(ds,spec,freq,beamazel,optical, optazel,optlla,isrlla,heightkm,ut
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
 #%% setup optical plot
     hi=[]; ht=[]; Iisr=[]; Iopt=[]
-    for a,o,e,l in zip(axs[0,:],optical,optazel,optlla):
+    for a,o,e,l,to in zip(axs[0,:],optical,optazel,optlla,optut):
         optisrazel = projectisrhist(isrlla,beamazel,l,e,heightkm)
 
         clim = compclim(o,lower=10,upper=99.9)
@@ -66,7 +67,7 @@ def dojointplot(ds,spec,freq,beamazel,optical, optazel,optlla,isrlla,heightkm,ut
 #                    edgecolors=jet(linspace(ds.min(),ds.max())))
 
 #%% time sync
-        Is,Io = timesync(T,utopt,utlim)
+        Is,Io = timesync(T,to,utlim)
         Iisr.append(Is); Iopt.append(Io)
 #%% iterate
     for iisr,iopt0,iopt1 in zip(Iisr,Iopt[0],Iopt[1]):
